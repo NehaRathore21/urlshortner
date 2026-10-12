@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/coverage/
+**/TestResults/
+.vs/
+.vscode/*.secrets.json
+*.user
+*.suo

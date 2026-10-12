@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/UrlShortener.Data/UrlShortener.Data.csproj" />
+    <Project Path="src/UrlShortener.Domain/UrlShortener.Domain.csproj" />
+    <Project Path="src/UrlShortener.Infrastructure/UrlShortener.Infrastructure.csproj" />
+    <Project Path="src/UrlShortener.Service/UrlShortener.Service.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UrlShortener.IntegrationTests/UrlShortener.IntegrationTests.csproj" />
+    <Project Path="tests/UrlShortener.UnitTests/UrlShortener.UnitTests.csproj" />
+  </Folder>
+</Solution>

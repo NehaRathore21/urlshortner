@@ -1,0 +1,185 @@
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Main navigation">
+    <a class="brand" href="/" aria-label="Shortform home">
+      <span class="brand-mark">s/</span>
+      <span>shortform<span class="brand-dot">.</span></span>
+    </a>
+
+    <div class="nav-label">WORKSPACE</div>
+    <button class="nav-item" type="button" [class.active]="activeTab() === 'overview'" (click)="selectTab('overview')" [attr.aria-current]="activeTab() === 'overview' ? 'page' : null">
+      <span class="nav-glyph">▦</span> Overview
+    </button>
+    <button class="nav-item" type="button" [class.active]="activeTab() === 'links'" (click)="selectTab('links')" [attr.aria-current]="activeTab() === 'links' ? 'page' : null">
+      <span class="nav-glyph">↗</span> Your links
+      <span class="nav-count">{{ links().length }}</span>
+    </button>
+
+    <div class="sidebar-bottom">
+      <div class="status-dot"></div>
+      <div>
+        <strong>Local workspace</strong>
+        <span>API connection</span>
+      </div>
+      <span class="online-mark" aria-label="Connected">●</span>
+    </div>
+  </aside>
+
+  <main class="main-content" id="overview">
+    <header class="topbar">
+      <div class="breadcrumbs">Workspace <span>/</span> {{ activeTab() === 'overview' ? 'Overview' : 'Your links' }}</div>
+      <div class="topbar-right">
+        <span class="today-label">URL INTELLIGENCE</span>
+        <div class="avatar" aria-label="Workspace profile">U</div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <section class="page-heading">
+        <div>
+          <div class="eyebrow">YOUR LINK WORKSPACE <span>01 / 03</span></div>
+          <h1>Links with a<br class="mobile-break"> longer story.</h1>
+          <p class="lede">Create short links and see what happens after the click.</p>
+        </div>
+        <button class="refresh-button" type="button" (click)="reload()" [disabled]="loading()" aria-label="Refresh links">
+          <span aria-hidden="true">⟳</span> Refresh
+        </button>
+      </section>
+
+      <div class="section-tabs" role="tablist" aria-label="Workspace views">
+        <button class="section-tab" type="button" role="tab" [attr.aria-selected]="activeTab() === 'overview'" [class.active]="activeTab() === 'overview'" (click)="selectTab('overview')">Overview</button>
+        <button class="section-tab" type="button" role="tab" [attr.aria-selected]="activeTab() === 'links'" [class.active]="activeTab() === 'links'" (click)="selectTab('links')">Your links</button>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="notice error-notice" role="alert">{{ errorMessage() }}</div>
+      }
+
+      @if (activeTab() === 'overview') {
+        <section class="metrics" aria-label="Workspace metrics">
+          <article class="metric">
+            <div class="metric-label">LINKS CREATED <span>↗</span></div>
+            <div class="metric-value">{{ links().length | number }}</div>
+            <div class="metric-note">Across this workspace</div>
+          </article>
+          <article class="metric metric-highlight">
+            <div class="metric-label">CLICKS RECORDED <span>↗</span></div>
+            <div class="metric-value">{{ totalClicks() | number }}</div>
+            <div class="metric-note">All time, all links</div>
+          </article>
+          <article class="metric">
+            <div class="metric-label">ACTIVE LINKS <span>↗</span></div>
+            <div class="metric-value">{{ activeLinks() | number }}</div>
+            <div class="metric-note">Ready to redirect</div>
+          </article>
+        </section>
+
+        <section class="create-section" aria-labelledby="create-heading">
+          <div class="section-kicker"><span class="step-index">01</span> CREATE A LINK</div>
+          <div class="create-row">
+            <div class="create-copy">
+              <h2 id="create-heading">Make it shorter.</h2>
+              <p>Paste a destination to create a trackable link.</p>
+            </div>
+            <form class="url-form" [formGroup]="urlForm" (ngSubmit)="createLink()">
+              <label class="visually-hidden" for="destination-url">Destination URL</label>
+              <span class="input-prefix" aria-hidden="true">↗</span>
+              <input id="destination-url" type="url" formControlName="url" placeholder="https://your-long-link.com/page" autocomplete="url">
+              <button type="submit" [disabled]="busy()">
+                {{ busy() ? 'Creating…' : 'Shorten link' }} <span aria-hidden="true">→</span>
+              </button>
+            </form>
+          </div>
+          @if (urlForm.controls.url.touched && urlForm.controls.url.invalid) {
+            <p class="field-error" role="alert">Enter a valid HTTP or HTTPS address, up to 2,048 characters.</p>
+          }
+        </section>
+
+        <section class="insights-section" aria-labelledby="insights-heading">
+          <div class="section-heading-row">
+            <div>
+              <div class="section-kicker"><span class="step-index">02</span> PERFORMANCE</div>
+              <h2 id="insights-heading">Click activity</h2>
+            </div>
+            @if (selectedLink(); as selected) {
+              <div class="selected-link-label">Showing <strong>{{ selected.code }}</strong></div>
+            }
+          </div>
+          <div class="chart-area">
+            @if (analyticsLoading()) {
+              <div class="empty-state">Loading click activity…</div>
+            } @else if (chartBars().length > 0) {
+              <div class="chart-total">
+                <strong>{{ analytics()?.totalClicks | number }}</strong>
+                <span>total clicks</span>
+              </div>
+              <div class="bar-chart" role="img" aria-label="Daily clicks for the selected link over the last 30 days">
+                @for (bar of chartBars(); track bar.dateUtc) {
+                  <div class="bar-column" [title]="bar.dateUtc + ': ' + bar.clicks + ' clicks'">
+                    <span class="bar-count">{{ bar.clicks }}</span>
+                    <div class="bar-track"><div class="bar-fill" [style.height.%]="bar.height"></div></div>
+                    <span class="bar-date">{{ bar.label }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="empty-state">
+                <span class="empty-mark">↗</span>
+                <strong>{{ selectedLink() ? 'No clicks in this period' : 'Your activity starts here' }}</strong>
+                <span>{{ selectedLink() ? 'Share this link to see visits appear.' : 'Create your first short link to start tracking.' }}</span>
+              </div>
+            }
+          </div>
+        </section>
+      } @else {
+        <section class="links-section" id="links" aria-labelledby="links-heading">
+          <div class="section-heading-row links-heading-row">
+            <div>
+              <div class="section-kicker"><span class="step-index">03</span> LINK LIBRARY</div>
+              <h2 id="links-heading">Your links <span class="heading-count">{{ links().length }}</span></h2>
+            </div>
+            <span class="table-caption">Newest first</span>
+          </div>
+
+          @if (loading()) {
+            <div class="empty-state table-empty">Loading your links…</div>
+          } @else if (links().length === 0) {
+            <div class="empty-state table-empty">
+              <strong>No links yet</strong>
+              <span>Your shortened URLs will appear here.</span>
+            </div>
+          } @else {
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>SHORT LINK</th><th>DESTINATION</th><th>CLICKS</th><th>CREATED</th><th><span class="visually-hidden">Actions</span></th></tr>
+                </thead>
+                <tbody>
+                  @for (link of links(); track link.id) {
+                    <tr [class.row-selected]="selectedLink()?.id === link.id">
+                      <td>
+                        <button class="link-code" type="button" (click)="selectLink(link)">{{ link.code }}</button>
+                        <a class="link-full" [href]="link.shortUrl" target="_blank" rel="noopener">{{ link.shortUrl }}</a>
+                      </td>
+                      <td class="destination-cell" [title]="link.originalUrl">{{ link.originalUrl }}</td>
+                      <td class="click-cell">{{ link.clickCount | number }}</td>
+                      <td class="date-cell">{{ link.createdAtUtc | date:'MMM d, y':'UTC' }}</td>
+                      <td class="action-cell">
+                        <button class="inspect-button" type="button" (click)="copyUrl(link)">{{ copiedCode() === link.code ? 'Copied' : 'Copy' }}</button>
+                        <button class="inspect-button inspect-muted" type="button" (click)="selectLink(link)">Details</button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+      }
+
+      <footer class="page-footer">
+        <span>SHORTFORM <span class="footer-divider">/</span> URL INTELLIGENCE</span>
+        <span>Clicks are recorded in UTC</span>
+      </footer>
+    </div>
+  </main>
+</div>
